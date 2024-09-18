@@ -1,19 +1,18 @@
-// src/App.tsx
-import React from 'react';
-import GameSetup from './LandingPage';
+import LandingPage from './LandingPage';
 import { WebSocketProvider } from './WebSocketContext';
+import './App.css'
 
-const App: React.FC = () => {
+function App() {
   return (
     <div className="App">
       <WebSocketProvider>
         <header className="App-header">
           <h1>One Night Werewolf</h1>
-          <GameSetup />
+          <LandingPage />
         </header>
       </WebSocketProvider>
     </div>
   );
-};
+}
 
-export default App;
+export default App

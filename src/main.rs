@@ -104,7 +104,7 @@ async fn handle_socket(mut socket: WebSocket, state: SharedState) {
                 Err(error) => println!("Got error while deserializing message {error}"),
             }
         } else {
-            println!("Non-text message received from web socket.");
+            println!("Non-text message received from web socket. {msg:?}");
         }
     }
 }

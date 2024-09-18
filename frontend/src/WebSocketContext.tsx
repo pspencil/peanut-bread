@@ -1,6 +1,6 @@
-import { useEffect, useRef, createContext } from "react";
+import { useEffect, useRef, createContext, MutableRefObject } from "react";
 
-const wsUrl = 'ws://localhost:3000/ws';
+const wsUrl = 'ws://127.0.0.1:3000/ws';
 
 interface ServerMessageMap {
     RoomCreated: { room_code: string };
@@ -29,6 +29,7 @@ class BackendWrapper {
     clients: { [id: string]: Callback[] }
 
     constructor(wsUrl: string) {
+        this.clients = {}
         this.ws = new WebSocket(wsUrl);
         this.ws.onopen = () => { console.log("Web Socket Open") };
         this.ws.onclose = () => { console.log("Web Socket Close") };
@@ -39,7 +40,6 @@ class BackendWrapper {
             });
 
         };
-        this.clients = {}
     }
 
     private subscribe(action: string, callback: Callback) {
@@ -79,7 +79,9 @@ class BackendWrapper {
     }
 }
 
-const WebSocketContext = createContext<BackendWrapper | null>(null)
+type Context = MutableRefObject<BackendWrapper | null> | null
+
+const WebSocketContext = createContext<Context>(null)
 
 
 const WebSocketProvider: React.FC<Props> = ({ children }) => {
@@ -91,11 +93,11 @@ const WebSocketProvider: React.FC<Props> = ({ children }) => {
     }, []);
 
     return (
-        <WebSocketContext.Provider value={wrapper.current} >
+        <WebSocketContext.Provider value={wrapper} >
             {children}
         </WebSocketContext.Provider>
     );
 }
 
 export { WebSocketProvider, WebSocketContext };
-export type { BackendWrapper };
+export type { BackendWrapper, Context };
