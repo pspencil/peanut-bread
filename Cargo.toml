@@ -1,0 +1,13 @@
+[package]
+name = "peanut-bread"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = {version = "0.7.5", features = ["ws"]}
+shuttle-axum = "0.47.0"
+shuttle-runtime = "0.47.0"
+tokio = "1.28.2"
+serde_json = "1.0"
+serde = "1.0"
+rand = "0.8.5"
