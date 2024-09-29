@@ -1,4 +1,4 @@
-import { useEffect, useRef, createContext, MutableRefObject, useState, useContext } from "react";
+import { useEffect, createContext, useState, useContext } from "react";
 
 const wsUrl = 'ws://127.0.0.1:3000/ws';
 
@@ -11,6 +11,8 @@ interface ServerMessageMap {
     PlayerJoined: { player_name: string };
     RoomDoesNotExist: {};
     RoomExists: {};
+    PlayerExists: {};
+    Kicked: {};
     RoomInfo: RoomInfo;
 }
 
@@ -29,7 +31,8 @@ type ClientMessage =
     | { action: 'CreateGame'; player_name: string }
     | { action: 'JoinGame'; player_name: string; room_code: string }
     | { action: 'LeaveGame'; player_name: string; room_code: string }
-    | { action: 'GetRoomInfo'; room_code: string };
+    | { action: 'GetRoomInfo'; room_code: string }
+    | { action: 'Kick'; player_name: string; room_code: string };
 
 type Props = {
     children?: React.ReactNode
@@ -67,6 +70,7 @@ class BackendWrapper {
             console.log("WebSocket closed. Code:", event.code, "Reason:", event.reason);
         };
         this.ws.onmessage = (message) => {
+            console.log(`Received message ${message}`);
             try {
                 const data: ServerMessage = JSON.parse(message.data as string);
                 console.log("Received message", data);
@@ -76,7 +80,7 @@ class BackendWrapper {
                 }
                 for (let client in clients) {
                     let callback = clients[client];
-                    console.log(`Sending message to ${client}`);
+                    console.log(`Sending message to ${client}: ${message.data}`);
                     callback(data);
                 }
             } catch (error) {
@@ -86,15 +90,15 @@ class BackendWrapper {
     }
 
     private subscribe(client_id: string, action: string, callback: Callback) {
-        console.log("DEBUG: ready state", this.ws?.readyState);
-        if (action in this.clients) {
-            this.clients[action][client_id] = callback
-        } else {
-            this.clients[action] = { client_id: callback };
+        console.log(`${client_id} subscribing to ${action}`);
+        if (!(action in this.clients)) {
+            this.clients[action] = {};
         }
+        this.clients[action][client_id] = callback;
     }
 
     public unsubscribe(client_id: string, action: string) {
+        console.log(`${client_id} unsubscribing to ${action}`);
         if (action in this.clients) {
             delete this.clients[action][client_id];
         }
@@ -102,6 +106,7 @@ class BackendWrapper {
 
     private send(message: ClientMessage) {
         const json = JSON.stringify(message);
+        console.log(`Sending message ${json}`);
         this.ws?.send(json);
     };
 
@@ -116,6 +121,11 @@ class BackendWrapper {
     leave_game(player_name: string, room_code: string) {
         this.send({ action: 'LeaveGame', player_name, room_code })
     }
+
+    kick(player_name: string, room_code: string) {
+        this.send({ action: 'Kick', player_name, room_code })
+    }
+
     get_room_info(room_code: string) {
         this.send({ action: 'GetRoomInfo', room_code })
     }

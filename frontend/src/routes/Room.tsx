@@ -30,12 +30,11 @@ function Room() {
     const wrapper = useWebSocket();
 
     useEffect(() => {
-        if (!location.state || !location.state.playerName) {
-            navigate("/", { state: { message: `Room ${roomCode} does not exist.` } });
-            return;
-        }
-
         const handleRoomInfo = (data: RoomInfo) => {
+            if (!location.state || !location.state.playerName || !data.players.includes(location.state.playerName)) {
+                navigate("/", { state: { join: roomCode, playerName: location?.state?.playerName } });
+                return;
+            }
             setRoomInfo(data);
             setIsLoading(false);
         };
@@ -44,11 +43,16 @@ function Room() {
             navigate("/", { state: { message: `Room ${roomCode} doesn't exist.` } });
         };
 
+        const handleKicked = () => {
+            navigate("/", { state: { message: "Kicked by host." } });
+        };
+
         const client_id = "Room";
 
         wrapper.when_ready(client_id, () => {
             wrapper.on(client_id, 'RoomInfo', handleRoomInfo);
             wrapper.on(client_id, 'RoomDoesNotExist', handleRoomDoesNotExist);
+            wrapper.on(client_id, 'Kicked', handleKicked);
 
             if (roomCode) {
                 wrapper.get_room_info(roomCode);
@@ -58,8 +62,8 @@ function Room() {
         });
 
         return () => {
-            wrapper.unsubscribe("Room", 'RoomInfo');
-            wrapper.unsubscribe("Room", 'RoomDoesNotExist');
+            wrapper.unsubscribe(client_id, 'RoomInfo');
+            wrapper.unsubscribe(client_id, 'RoomDoesNotExist');
         };
     }, [roomCode, navigate, location.state, wrapper]);
 
@@ -73,13 +77,21 @@ function Room() {
         return null;
     }
 
+    function kick(player: string, roomCode: string) {
+        return () => {
+            wrapper.kick(player, roomCode);
+        }
+    }
+
     const { playerName } = location.state;
+    const kickClass = "text-gray-400 underline";
     const playerString = roomInfo.players.map((player: string, index: number) => (
         <React.Fragment key={player}>
             {index > 0 && ', '}
             <span className={player === roomInfo.host ? "font-bold" : ""}>
                 {player}
             </span>
+            {player !== roomInfo.host && playerName === roomInfo.host && <button onClick={kick(player, roomCode)} className={kickClass}>[kick]</button>}
         </React.Fragment>
     ));
 
@@ -94,7 +106,7 @@ function Room() {
                 </nav>
             </header>
             <div className="text-white p-4">
-                <p>Players: {playerString}</p>
+                <p >Players: {playerString}</p>
             </div>
         </div>
     );

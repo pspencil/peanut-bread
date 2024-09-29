@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { WebSocketContext, BackendWrapper } from './WebSocketContext';
-import { redirect, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ErrorPopup } from './Popup';
 
 
@@ -45,6 +45,7 @@ interface TabBarProps {
     activeTab: Tab,
     setActiveTab: (t: Tab) => void
 }
+
 function TabBar({ activeTab, setActiveTab }: TabBarProps) {
     const commonClass = "inline-flex items-center h-10 px-4 -mb-px text-lg font-medium sm:text-xl text-center bg-transparent border-b-2 whitespace-nowrap focus:outline-none";
     function createActiveTab(tab: Tab) {
@@ -74,11 +75,16 @@ function TabBar({ activeTab, setActiveTab }: TabBarProps) {
         {tabs}
     </div>
 }
+
 const confirmButtonClass = "px-6 py-2 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-indigo-900 rounded-lg hover:bg-indigo-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-50"
 
+interface CreateGameBoxProps {
+    playerName: string,
+    setPlayerName: (e: string) => void,
+}
 
-function CreateGameBox() {
-    const [playerName, setPlayerName] = useState<string>('');
+
+function CreateGameBox({ playerName, setPlayerName }: CreateGameBoxProps) {
     const wrapper = useContext<BackendWrapper>(WebSocketContext);
     const navigate = useNavigate();
 
@@ -99,15 +105,25 @@ function CreateGameBox() {
     )
 }
 
-function JoinGameBox({ setMessage }: { setMessage: (a: string) => void }) {
-    const [playerName, setPlayerName] = useState<string>('');
-    const [roomCode, setRoomCode] = useState<string>('');
+interface JoinGameBoxProps {
+    setMessage: (a: string) => void,
+    playerName: string,
+    setPlayerName: (e: string) => void,
+    roomCode: string,
+    setRoomCode: (e: string) => void,
+}
+
+function JoinGameBox({ setMessage, playerName, setPlayerName, roomCode, setRoomCode }: JoinGameBoxProps) {
     const navigate = useNavigate();
     const wrapper = useContext<BackendWrapper>(WebSocketContext);
 
     const handleJoinGame = () => {
         wrapper.on("JoinGameBox", 'RoomDoesNotExist', ({ }: {}) => {
             setMessage(`Room ${roomCode} does not exist.`);
+        });
+
+        wrapper.on("JoinGameBox", 'PlayerExists', ({ }: {}) => {
+            setMessage(`Player ${playerName} already in ${roomCode}.`);
         });
 
         wrapper.on("JoinGameBox", 'RoomExists', ({ }: {}) => {
@@ -131,29 +147,44 @@ const LandingPage: React.FC = () => {
     const [trigger, setTrigger] = useState<number>(0);
     const location = useLocation();
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState<Tab>(Tab.CreateGame)
+    const [playerName, setPlayerName] = useState<string>('');
+    const [roomCode, setRoomCode] = useState<string>('');
 
     function setMessageAndRefresh(message: string) {
         setMessage(message);
-        setTrigger(trigger + 1);
+        setTrigger(prev => prev + 1);
     }
 
-
     useEffect(() => {
-        if (location.state && 'message' in location.state) {
-            setMessageAndRefresh(location.state.message);
-            // Clear the message from the location state
+        if (location.state && typeof location.state === 'object') {
+            const { message, join, playerName } = location.state as { message?: string; join?: string; playerName?: string };
+
+            if (message) {
+                setMessageAndRefresh(message);
+            }
+
+            if (join) {
+                setActiveTab(Tab.JoinGame);
+                setRoomCode(join);
+            }
+
+            if (playerName) {
+                setPlayerName(playerName);
+            }
+
+            // Clear the location state
             navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location, navigate]);
+    }, []);
 
-    const [activeTab, setActiveTab] = useState<Tab>(Tab.CreateGame)
     return (
         <div>
             {message && <ErrorPopup message={message} trigger={trigger} />}
             <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
             <div className='max-w-4xl p-6 mx-auto rounded-md shadow-md'>
-                {activeTab as Tab === Tab.CreateGame && <CreateGameBox />}
-                {activeTab as Tab === Tab.JoinGame && <JoinGameBox setMessage={setMessageAndRefresh} />}
+                {activeTab === Tab.CreateGame && <CreateGameBox playerName={playerName} setPlayerName={setPlayerName} />}
+                {activeTab === Tab.JoinGame && <JoinGameBox setMessage={setMessageAndRefresh} playerName={playerName} setPlayerName={setPlayerName} roomCode={roomCode} setRoomCode={setRoomCode} />}
             </div>
         </div>
     );
