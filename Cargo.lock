@@ -997,6 +997,7 @@ name = "peanut-bread"
 version = "0.1.0"
 dependencies = [
  "axum 0.7.5",
+ "futures-util",
  "rand",
  "serde",
  "serde_json",
