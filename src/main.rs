@@ -17,6 +17,7 @@ use axum_macros::debug_handler;
 use futures_util::{SinkExt, StreamExt};
 use room_manager::{create_game, get_room_info, join_game, kick, leave_game};
 use tokio::sync::mpsc::{self};
+use tower_http::services::ServeDir;
 
 use protocol::ClientMessage;
 
@@ -102,6 +103,8 @@ async fn handle_socket(socket: WebSocket, state: state::Global) {
 async fn axum() -> shuttle_axum::ShuttleAxum {
     let state = state::Server::new();
 
-    let app = Router::new().route("/ws", get(handle_ws).with_state(state));
+    let app = Router::new()
+        .route("/ws", get(handle_ws).with_state(state))
+        .nest_service("/", ServeDir::new("frontend/static"));
     Ok(app.into())
 }
