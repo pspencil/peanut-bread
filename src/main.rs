@@ -15,7 +15,8 @@ use axum::{
 };
 use axum_macros::debug_handler;
 use futures_util::{SinkExt, StreamExt};
-use room_manager::{create_game, get_room_info, join_game, kick, leave_game};
+use log::{debug, error, info, warn};
+use room_manager::{change_role, create_game, get_room_info, join_game, kick, leave_game};
 use tokio::sync::mpsc::{self};
 use tower_http::services::ServeDir;
 
@@ -31,7 +32,7 @@ async fn handle_client_message(
     state: state::Global,
     sender: state::WsSender,
 ) {
-    println!("Received client message. {client_message:?}");
+    info!("Received client message. {client_message:?}");
     match client_message {
         ClientMessage::CreateGame { player_name } => create_game(state, sender, &player_name).await,
         ClientMessage::JoinGame {
@@ -47,6 +48,11 @@ async fn handle_client_message(
             room_code,
         } => kick(state, &player_name, &room_code).await,
         ClientMessage::GetRoomInfo { room_code } => get_room_info(state, sender, &room_code).await,
+        ClientMessage::ChangeRole {
+            room_code,
+            role,
+            count,
+        } => change_role(state, &room_code, role, count).await,
     }
 }
 
@@ -78,16 +84,16 @@ async fn handle_socket(socket: WebSocket, state: state::Global) {
                         ClientMessage::LeaveGame { .. } | ClientMessage::Kick { .. } => {
                             player_name = String::new();
                         }
-                        ClientMessage::GetRoomInfo { .. } => {}
+                        _ => {}
                     }
 
                     handle_client_message(client_message, state.clone(), tx.clone()).await;
                 }
-                Err(error) => println!("Got error while deserializing message {error}"),
+                Err(error) => error!("Got error while deserializing message {error}"),
             }
-            println!("DEBUG: State after {state:?}");
+            info!("State after {state:?}");
         } else {
-            println!("Non-text message received from web socket. {msg:?}");
+            warn!("Non-text message received from web socket. {msg:?}");
         }
     }
 

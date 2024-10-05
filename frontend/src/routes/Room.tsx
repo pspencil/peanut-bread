@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { RoomInfo, useWebSocket } from "../WebSocketContext";
+import { RoomConfiguration } from "../components/RoomConfiguration";
+import { RedButton } from "../components/Button";
 
-function LeaveButton({ playerName, roomCode }: { playerName: string; roomCode: string }) {
+function LeaveButton({ playerName, roomCode }: { playerName: string; roomCode: string; }) {
     const wrapper = useWebSocket();
     const navigate = useNavigate();
 
@@ -11,15 +13,9 @@ function LeaveButton({ playerName, roomCode }: { playerName: string; roomCode: s
         navigate("/");
     }
 
-    return (
-        <button
-            onClick={handleLeaveGame}
-            className="px-6 py-2 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-red-600 rounded-lg hover:bg-red-500 focus:outline-none focus:ring focus:ring-red-300 focus:ring-opacity-50"
-        >
-            Leave Room
-        </button>
-    );
+    return <RedButton onClick={handleLeaveGame} text="Leave Room" />;
 }
+
 
 function Room() {
     const { roomCode } = useParams<{ roomCode: string }>();
@@ -77,23 +73,7 @@ function Room() {
         return null;
     }
 
-    function kick(player: string, roomCode: string) {
-        return () => {
-            wrapper.kick(player, roomCode);
-        }
-    }
-
     const { playerName } = location.state;
-    const kickClass = "text-gray-400 underline";
-    const playerString = roomInfo.players.map((player: string, index: number) => (
-        <React.Fragment key={player}>
-            {index > 0 && ', '}
-            <span className={player === roomInfo.host ? "font-bold" : ""}>
-                {player}
-            </span>
-            {player !== roomInfo.host && playerName === roomInfo.host && <button onClick={kick(player, roomCode)} className={kickClass}>[kick]</button>}
-        </React.Fragment>
-    ));
 
     return (
         <div className="bg-slate-900 min-h-screen">
@@ -105,9 +85,7 @@ function Room() {
                     <LeaveButton playerName={playerName} roomCode={roomCode} />
                 </nav>
             </header>
-            <div className="text-white p-4">
-                <p >Players: {playerString}</p>
-            </div>
+            <RoomConfiguration roomCode={roomCode} roomInfo={roomInfo} playerName={playerName} />
         </div>
     );
 }

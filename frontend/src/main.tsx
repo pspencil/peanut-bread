@@ -5,7 +5,7 @@ import Root from './routes/Root.tsx'
 import Room from './routes/Room.tsx'
 import './index.css'
 import { WebSocketProvider } from './WebSocketContext.tsx'
-import StatusIndicator from './StatusIndicator.tsx'
+import StatusIndicator from './components/StatusIndicator.tsx'
 
 const router = createBrowserRouter([
   {

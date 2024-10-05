@@ -1,11 +1,13 @@
 import { useEffect, createContext, useState, useContext } from "react";
 
 const wsUrl = ((window.location.protocol == "https:" && "wss://") || "ws://") +
-    window.location.host +
+    ((window.location.port == "5173" && "localhost:3000") || window.location.host) +
     "/ws";
 
 interface RoomInfo {
-    players: string[], host: string
+    players: string[],
+    host: string,
+    roles: { [id: string]: number }
 }
 
 interface ServerMessageMap {
@@ -28,13 +30,14 @@ type Callback = (message: ServerMessage) => void
 
 type ClientMap<T> = { [id: string]: T }
 
-// TODO
 type ClientMessage =
     | { action: 'CreateGame'; player_name: string }
     | { action: 'JoinGame'; player_name: string; room_code: string }
     | { action: 'LeaveGame'; player_name: string; room_code: string }
     | { action: 'GetRoomInfo'; room_code: string }
-    | { action: 'Kick'; player_name: string; room_code: string };
+    | { action: 'Kick'; player_name: string; room_code: string }
+    | { action: 'ChangeRole'; role: string; room_code: string; count: number }
+    ;
 
 type Props = {
     children?: React.ReactNode
@@ -130,6 +133,10 @@ class BackendWrapper {
 
     get_room_info(room_code: string) {
         this.send({ action: 'GetRoomInfo', room_code })
+    }
+
+    change_role(role: string, room_code: string, count: number) {
+        this.send({ action: 'ChangeRole', role, room_code, count });
     }
 
     on<K extends ServerAction>(

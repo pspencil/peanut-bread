@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::types::Room;
+use crate::types::{Role, Room};
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "action")]
 pub enum ClientMessage {
@@ -21,6 +21,11 @@ pub enum ClientMessage {
     Kick {
         room_code: String,
         player_name: String,
+    },
+    ChangeRole {
+        room_code: String,
+        role: Role,
+        count: i64,
     },
 }
 
