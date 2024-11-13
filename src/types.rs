@@ -21,6 +21,7 @@ pub enum Role {
     Troublemaker,
     Drunk,
     Insomniac,
+    Villager,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

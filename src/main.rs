@@ -15,7 +15,7 @@ use axum::{
 };
 use axum_macros::debug_handler;
 use futures_util::{SinkExt, StreamExt};
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use room_manager::{change_role, create_game, get_room_info, join_game, kick, leave_game};
 use tokio::sync::mpsc::{self};
 use tower_http::services::ServeDir;

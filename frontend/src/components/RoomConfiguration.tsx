@@ -1,7 +1,7 @@
 import { Role, RoleArray, ofRustRole, roleName, toRustRole } from "../GameConstants";
 import { RoomInfo, useWebSocket } from "../WebSocketContext";
 import { InlineButton, NormalButton } from "../components/Button";
-import React, { useState } from "react";
+import React from "react";
 
 interface PlayerBarProps {
     roomCode: string,
